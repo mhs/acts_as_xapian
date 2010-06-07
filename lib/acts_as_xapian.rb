@@ -652,6 +652,8 @@ module ActsAsXapian
                 end
             elsif type == :boolean
                 value ? true : false
+            elsif value.is_a? Array
+                value.map{|i| i.to_s}
             else
                 value.to_s
             end
@@ -678,8 +680,15 @@ module ActsAsXapian
             doc.add_term("I" + doc.data)
             if self.xapian_options[:terms]
               for term in self.xapian_options[:terms]
-                  ActsAsXapian.term_generator.increase_termpos # stop phrases spanning different text fields
-                  ActsAsXapian.term_generator.index_text(xapian_value(term[0]), 1, term[1])
+                  if xapian_value(term[0]).is_a? Array
+                    xapian_value(term[0]).each do |t|
+                      ActsAsXapian.term_generator.increase_termpos # stop phrases spanning different text fields
+                      ActsAsXapian.term_generator.index_text(t, 1, term[1])
+                    end
+                  else
+                    ActsAsXapian.term_generator.increase_termpos # stop phrases spanning different text fields
+                    ActsAsXapian.term_generator.index_text(xapian_value(term[0]), 1, term[1])
+                  end
               end
             end
             if self.xapian_options[:values]
